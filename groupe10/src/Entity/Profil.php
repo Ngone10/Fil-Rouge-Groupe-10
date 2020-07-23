@@ -2,13 +2,35 @@
 
 namespace App\Entity;
 
-use App\Repository\ProfilRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\ProfilRepository;
+use Doctrine\Common\Collections\Collection;
+use ApiPlatform\Core\Annotation\ApiResource;
+use Doctrine\Common\Collections\ArrayCollection;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
  * @ORM\Entity(repositoryClass=ProfilRepository::class)
+ * @UniqueEntity("libelle",message="Ce libellé existe déja.")
+ * @ApiResource(
+ *     collectionOperations={
+ *         "get"={"path"="/admin/profils"},
+ *         "post"={"path"="/admin/profils"},
+ *     },
+ *     itemOperations={
+ *         "get"={"path"="/admin/profils/{id}",
+ *          "requirements"={"id"="\d+"}
+ *          },
+ *         "put"={"path"="/admin/profils/{id}",
+ *          "requirements"={"id"="\d+"}
+ *          },
+ *          "delete"={"path"="/admin/profils/{id}",
+ *          "requirements"={"id"="\d+"}
+ *          },
+ *     }
+ * )
  */
 class Profil
 {
@@ -16,11 +38,15 @@ class Profil
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
+     * @Groups({"profil:read"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Assert\NotBlank(
+     *     message = "Ce Champ ne doit pas être vide."
+     * )
      */
     private $libelle;
 

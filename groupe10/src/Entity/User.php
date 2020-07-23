@@ -4,13 +4,36 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\UserRepository;
+use ApiPlatform\Core\Action\NotFoundAction;
 use ApiPlatform\Core\Annotation\ApiResource;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
- * 
- * @ApiResource
+ * @UniqueEntity("email",message="Cette adresse mail est déja utilisé.")
+ * @ApiResource(
+ *     collectionOperations={
+ *         "get"={"path"="/admin/users"},
+ *         "post"={"path"="/admin/users"},
+ *         "get_apprenants"={
+ *          "method"="GET",
+ *          "path"="/apprenants" ,
+ *          "normalization_context"={"groups":"apprenant:read"},
+ *          "route_name"="apprenant_liste",
+ *          }
+ *     },
+ *     itemOperations={
+ *         "get"={"path"="/admin/users/{id}",
+ *         "requirements"={"id"="\d+"}
+ *          },
+ *         "put"={"path"="/admin/users/{id}",
+ *         "requirements"={"id"="\d+"}
+ *          },
+ *     }
+ * )
  */
 class User implements UserInterface
 {
@@ -18,6 +41,7 @@ class User implements UserInterface
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
+     * @Groups({"apprenant:read"})
      */
     private $id;
 
@@ -37,51 +61,76 @@ class User implements UserInterface
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
+     * @Groups({"apprenant:read"})
      */
     private $avatar;
 
     /**
      * @ORM\ManyToOne(targetEntity=Profil::class, inversedBy="users")
+     * @Groups({"apprenant:read"})
      */
     private $profil;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Assert\NotBlank(
+     *     message = "Ce Champ ne doit pas être vide."
+     * )
+     * @Groups({"apprenant:read"})
      */
     private $prenom;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Assert\NotBlank(
+     *     message = "Ce Champ ne doit pas être vide."
+     * )
+     * @Groups({"apprenant:read"})
      */
     private $nom;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Assert\NotBlank(
+     *     message = "Ce Champ ne doit pas être vide."
+     * )
+     * @Groups({"apprenant:read"})
      */
     private $telephone;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Assert\NotBlank(
+     *     message = "Ce Champ ne doit pas être vide."
+     * )
+     * @Groups({"apprenant:read"})
      */
     private $adresse;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
+     * @Groups({"apprenant:read"})
      */
     private $genre;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
+     * @Groups({"apprenant:read"})
      */
     private $statut;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
+     * @Groups({"apprenant:read"})
      */
     private $info_complementaire;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Assert\NotBlank(
+     *     message = "Ce Champ ne doit pas être vide."
+     * )
+     * @Groups({"apprenant:read"})
      */
     private $email;
 
