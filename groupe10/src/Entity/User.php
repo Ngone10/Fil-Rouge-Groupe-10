@@ -2,13 +2,17 @@
 
 namespace App\Entity;
 
+use App\Entity\Profil;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\UserRepository;
 use ApiPlatform\Core\Action\NotFoundAction;
 use ApiPlatform\Core\Annotation\ApiResource;
+use Symfony\Component\Security\Core\Security;
+use ApiPlatform\Core\Annotation\ApiSubresource;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Doctrine\Common\Annotations\Annotation\IgnoreAnnotation;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
@@ -17,20 +21,81 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
  * @ApiResource(
  *     collectionOperations={
  *         "get"={"path"="/admin/users"},
- *         "post"={"path"="/admin/users"},
+ *         "post_users"={
+ *                  "method"="POST",
+ *                  "path"="/admin/users",
+ *                  "denormalization_context"={"groups"={"user:write"}},
+ *                  "access_control"="(is_granted('ROLE_ADMIN'))",
+ *                  "access_control_message"="Vous n'avez pas access à cette Ressource",
+ *                  "route_name"="add_user"
+ *          },
  *         "get_apprenants"={
- *          "method"="GET",
- *          "path"="/apprenants" ,
- *          "normalization_context"={"groups":"apprenant:read"},
- *          "route_name"="apprenant_liste",
+ *                  "method"="GET",
+ *                  "path"="/apprenants",
+ *                  "normalization_context"={"groups"={"user:read"}},
+ *                  "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_FORMATEUR') or is_granted('ROLE_CM'))",
+ *                  "access_control_message"="Vous n'avez pas access à cette Ressource",
+ *                  "route_name"="apprenant_liste"
+ *          },
+ *          "post_apprenants"={
+ *                  "method"="POST",
+ *                  "path"="/apprenants",
+ *                  "denormalization_context"={"groups"={"user:write"}},
+ *                  "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_FORMATEUR'))",
+ *                  "access_control_message"="Vous n'avez pas access à cette Ressource",
+ *                  "route_name"="ajout_apprenant"
+ *          },
+ *          "get_formateurs"={
+ *                  "method"="GET",
+ *                  "path"="/formateurs",
+ *                  "denormalization_context"={"groups"={"user:read"}},
+ *                  "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_CM'))",
+ *                  "access_control_message"="Vous n'avez pas access à cette Ressource",
  *          }
  *     },
  *     itemOperations={
  *         "get"={"path"="/admin/users/{id}",
- *         "requirements"={"id"="\d+"}
+ *                  "requirements"={"id"="\d+"
+ *                }
  *          },
  *         "put"={"path"="/admin/users/{id}",
- *         "requirements"={"id"="\d+"}
+ *                  "requirements"={"id"="\d+" 
+ *                }
+ *          },
+ *          "get_apprenant"={
+ *              "method"="GET",
+ *              "path"="/apprenants/{id}",
+ *              "requirements"={"id"="\d+"},
+ *              "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_FORMATEUR')  or is_granted('ROLE_CM'))",
+ *              "access_control_message"="Vous n'avez pas access à cette Ressource",
+ *          },
+ *          "get_formateur"={
+ *              "method"="GET",
+ *              "path"="/formateurs/{id}",
+ *              "requirements"={"id"="\d+"},
+ *              "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_FORMATEUR')  or is_granted('ROLE_CM'))",
+ *              "access_control_message"="Vous n'avez pas access à cette Ressource",
+ *          },
+ *          "put_apprenant"={
+ *              "method"="PUT",
+ *              "path"="/apprenants/{id}",
+ *              "requirements"={"id"="\d+"},
+ *              "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_FORMATEUR') or is_granted('ROLE_APPRENANT'))",
+ *              "access_control_message"="Vous n'avez pas access à cette Ressource",
+ *          },
+ *          "put_formateur"={
+ *              "method"="PUT",
+ *              "path"="/formateurs/{id}",
+ *              "requirements"={"id"="\d+"},
+ *              "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_FORMATEUR'))",
+ *              "access_control_message"="Vous n'avez pas access à cette Ressource",
+ *          },
+ *          "get_apprenant"={
+ *              "method"="GET",
+ *              "path"="/apprenants/{id}",
+ *              "requirements"={"id"="\d+"},
+ *              "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_APPRENANT'))",
+ *              "access_control_message"="Vous n'avez pas access à cette Ressource",
  *          },
  *     }
  * )
@@ -41,33 +106,40 @@ class User implements UserInterface
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
-     * @Groups({"apprenant:read"})
+     * @Groups({"user:read", "user":"write"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=180, unique=true)
-     * 
+     * @Groups({"user:read", "user":"write"})
      */
     private $username;
 
+    /**
+     *
+     * @Groups({"user:read"})
+     * @Groups({"user:read", "user":"write"})
+    */
     private $roles = [];
 
     /**
      * @var string The hashed password
      * @ORM\Column(type="string")
+     * @Groups({"user:read", "user":"write"})
      */
     private $password;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"apprenant:read"})
+     * @ORM\Column(type="blob", nullable=true)
      */
     private $avatar;
 
     /**
      * @ORM\ManyToOne(targetEntity=Profil::class, inversedBy="users")
-     * @Groups({"apprenant:read"})
+     * @ORM\JoinColumn(nullable=false)
+     * @ApiSubresource
+     * @Groups({"user:read", "user":"write"})
      */
     private $profil;
 
@@ -76,7 +148,7 @@ class User implements UserInterface
      * @Assert\NotBlank(
      *     message = "Ce Champ ne doit pas être vide."
      * )
-     * @Groups({"apprenant:read"})
+     * @Groups({"user:read", "user":"write"})
      */
     private $prenom;
 
@@ -85,7 +157,7 @@ class User implements UserInterface
      * @Assert\NotBlank(
      *     message = "Ce Champ ne doit pas être vide."
      * )
-     * @Groups({"apprenant:read"})
+     * @Groups({"user:read", "user":"write"})
      */
     private $nom;
 
@@ -94,7 +166,7 @@ class User implements UserInterface
      * @Assert\NotBlank(
      *     message = "Ce Champ ne doit pas être vide."
      * )
-     * @Groups({"apprenant:read"})
+     * @Groups({"user:read", "user":"write"})
      */
     private $telephone;
 
@@ -103,25 +175,28 @@ class User implements UserInterface
      * @Assert\NotBlank(
      *     message = "Ce Champ ne doit pas être vide."
      * )
-     * @Groups({"apprenant:read"})
+     * @Groups({"user:read", "user":"write"})
      */
     private $adresse;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"apprenant:read"})
+     * @Assert\NotBlank(
+     *     message = "Ce Champ ne doit pas être vide."
+     * )
+     * @Groups({"user:read", "user":"write"})
      */
     private $genre;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"apprenant:read"})
+     * @Groups({"user:read", "user":"write"})
      */
     private $statut;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"apprenant:read"})
+     * @Groups({"user:read", "user":"write"})
      */
     private $info_complementaire;
 
@@ -130,7 +205,7 @@ class User implements UserInterface
      * @Assert\NotBlank(
      *     message = "Ce Champ ne doit pas être vide."
      * )
-     * @Groups({"apprenant:read"})
+     * @Groups({"user:read", "user":"write"})
      */
     private $email;
 

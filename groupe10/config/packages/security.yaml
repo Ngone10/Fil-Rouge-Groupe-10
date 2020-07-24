@@ -1,10 +1,11 @@
 security:
+    #enable_authenticator_manager: true
     encoders:
         App\Entity\User:
             algorithm: auto
-    role_hierarchy:
-        # Un admin hérite des droits de formateur et d'apprenant
-        ROLE_ADMIN:       [ROLE_FORMATEUR, ROLE_APPRENANT]
+    #role_hierarchy:
+         #Un admin hérite des droits de formateur et d'apprenant
+        #ROLE_ADMIN:       [ROLE_FORMATEUR, ROLE_APPRENANT]
 
     # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
     providers:
@@ -52,8 +53,8 @@ security:
     access_control:
         # - { path: ^/profile, roles: ROLE_USER }
         - { path: ^/api/login, roles: [ROLE_USER,IS_AUTHENTICATED_ANONYMOUSLY] }
-        - { path: ^/api/apprenants, roles: [ROLE_ADMIN, ROLE_FORMATEUR] }
         - { path: ^/api,       roles: [ROLE_USER, IS_AUTHENTICATED_FULLY ] }
-        - { path: ^/api/admin, roles: ROLE_ADMIN }
+        - { path: ^/admin, roles: ROLE_ADMIN }
+
 
 
