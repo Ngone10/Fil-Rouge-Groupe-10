@@ -2,101 +2,42 @@
 
 namespace App\Entity;
 
-use App\Entity\Profil;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\UserRepository;
-use ApiPlatform\Core\Action\NotFoundAction;
 use ApiPlatform\Core\Annotation\ApiResource;
+use Symfony\Component\Security\Core\User\UserInterface;
+use App\Entity\Profil;
+use Doctrine\ORM\Mapping\InheritanceType;
+use ApiPlatform\Core\Action\NotFoundAction;
+use Doctrine\ORM\Mapping\DiscriminatorColumn;
 use Symfony\Component\Security\Core\Security;
 use ApiPlatform\Core\Annotation\ApiSubresource;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Security\Core\User\UserInterface;
 use Doctrine\Common\Annotations\Annotation\IgnoreAnnotation;
+use Symfony\Component\Serializer\Annotation\DiscriminatorMap;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
+ * @ORM\InheritanceType("JOINED")
+ * @ORM\DiscriminatorColumn(name="type", type="string")
+ * @ORM\DiscriminatorMap({"user" = "User", "admin"="Admin", "formateur" = "Formateur", "apprenant" = "Apprenant", "cm"="Cm"})
  * @UniqueEntity("email",message="Cette adresse mail est déja utilisé.")
  * @ApiResource(
+ *       normalizationContext={"groups"={"user:read"}},
+ *       denormalizationContext={"groups"={"user:write"}},
  *     collectionOperations={
  *         "get"={"path"="/admin/users"},
- *         "post_users"={
- *                  "method"="POST",
- *                  "path"="/admin/users",
- *                  "denormalization_context"={"groups"={"user:write"}},
- *                  "access_control"="(is_granted('ROLE_ADMIN'))",
- *                  "access_control_message"="Vous n'avez pas access à cette Ressource",
- *                  "route_name"="add_user"
- *          },
- *         "get_apprenants"={
- *                  "method"="GET",
- *                  "path"="/apprenants",
- *                  "normalization_context"={"groups"={"user:read"}},
- *                  "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_FORMATEUR') or is_granted('ROLE_CM'))",
- *                  "access_control_message"="Vous n'avez pas access à cette Ressource",
- *                  "route_name"="apprenant_liste"
- *          },
- *          "post_apprenants"={
- *                  "method"="POST",
- *                  "path"="/apprenants",
- *                  "denormalization_context"={"groups"={"user:write"}},
- *                  "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_FORMATEUR'))",
- *                  "access_control_message"="Vous n'avez pas access à cette Ressource",
- *                  "route_name"="ajout_apprenant"
- *          },
- *          "get_formateurs"={
- *                  "method"="GET",
- *                  "path"="/formateurs",
- *                  "denormalization_context"={"groups"={"user:read"}},
- *                  "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_CM'))",
- *                  "access_control_message"="Vous n'avez pas access à cette Ressource",
- *          }
+ *         "post"={"path"="/admin/users"}
  *     },
  *     itemOperations={
  *         "get"={"path"="/admin/users/{id}",
- *                  "requirements"={"id"="\d+"
- *                }
+ *                "requirements"={"id"="\d+"}
  *          },
  *         "put"={"path"="/admin/users/{id}",
- *                  "requirements"={"id"="\d+" 
- *                }
- *          },
- *          "get_apprenant"={
- *              "method"="GET",
- *              "path"="/apprenants/{id}",
- *              "requirements"={"id"="\d+"},
- *              "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_FORMATEUR')  or is_granted('ROLE_CM'))",
- *              "access_control_message"="Vous n'avez pas access à cette Ressource",
- *          },
- *          "get_formateur"={
- *              "method"="GET",
- *              "path"="/formateurs/{id}",
- *              "requirements"={"id"="\d+"},
- *              "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_FORMATEUR')  or is_granted('ROLE_CM'))",
- *              "access_control_message"="Vous n'avez pas access à cette Ressource",
- *          },
- *          "put_apprenant"={
- *              "method"="PUT",
- *              "path"="/apprenants/{id}",
- *              "requirements"={"id"="\d+"},
- *              "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_FORMATEUR') or is_granted('ROLE_APPRENANT'))",
- *              "access_control_message"="Vous n'avez pas access à cette Ressource",
- *          },
- *          "put_formateur"={
- *              "method"="PUT",
- *              "path"="/formateurs/{id}",
- *              "requirements"={"id"="\d+"},
- *              "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_FORMATEUR'))",
- *              "access_control_message"="Vous n'avez pas access à cette Ressource",
- *          },
- *          "get_apprenant"={
- *              "method"="GET",
- *              "path"="/apprenants/{id}",
- *              "requirements"={"id"="\d+"},
- *              "access_control"="(is_granted('ROLE_ADMIN') or is_granted('ROLE_APPRENANT'))",
- *              "access_control_message"="Vous n'avez pas access à cette Ressource",
- *          },
+ *                "requirements"={"id"="\d+"}
+ *          }
  *     }
  * )
  */
@@ -106,40 +47,44 @@ class User implements UserInterface
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
-     * @Groups({"user:read", "user":"write"})
+     * @Groups({"user:read", "user:write"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=180, unique=true)
-     * @Groups({"user:read", "user":"write"})
+     * @Assert\NotBlank(
+     *     message = "Ce Champ ne doit pas être vide."
+     * )
+     * @Groups({"user:read", "user:write"})
      */
     private $username;
 
-    /**
-     *
-     * @Groups({"user:read"})
-     * @Groups({"user:read", "user":"write"})
-    */
     private $roles = [];
 
     /**
      * @var string The hashed password
      * @ORM\Column(type="string")
-     * @Groups({"user:read", "user":"write"})
+     * @Assert\NotBlank(
+     *     message = "Ce Champ ne doit pas être vide."
+     * )
+     * @Groups({"user:read", "user:write"})
      */
     private $password;
 
     /**
-     * @ORM\Column(type="blob", nullable=true)
+     * @ORM\Column(type="string", length=255)
+     * @Assert\NotBlank(
+     *     message = "Ce Champ ne doit pas être vide."
+     * )
+     * @Groups({"user:read", "user:write"})
      */
-    private $avatar;
+    private $email;
 
     /**
      * @ORM\ManyToOne(targetEntity=Profil::class, inversedBy="users")
-     * @ORM\JoinColumn(nullable=false)
-     * @ApiSubresource
-     * @Groups({"user:read", "user":"write"})
+     * @Groups({"user:read", "user:write"})
+     * @ApiSubresource()
      */
     private $profil;
 
@@ -148,7 +93,7 @@ class User implements UserInterface
      * @Assert\NotBlank(
      *     message = "Ce Champ ne doit pas être vide."
      * )
-     * @Groups({"user:read", "user":"write"})
+     * @Groups({"user:read", "user:write"})
      */
     private $prenom;
 
@@ -157,7 +102,7 @@ class User implements UserInterface
      * @Assert\NotBlank(
      *     message = "Ce Champ ne doit pas être vide."
      * )
-     * @Groups({"user:read", "user":"write"})
+     * @Groups({"user:read", "user:write"})
      */
     private $nom;
 
@@ -166,48 +111,9 @@ class User implements UserInterface
      * @Assert\NotBlank(
      *     message = "Ce Champ ne doit pas être vide."
      * )
-     * @Groups({"user:read", "user":"write"})
-     */
-    private $telephone;
-
-    /**
-     * @ORM\Column(type="string", length=255)
-     * @Assert\NotBlank(
-     *     message = "Ce Champ ne doit pas être vide."
-     * )
-     * @Groups({"user:read", "user":"write"})
+     * @Groups({"user:read", "user:write"})
      */
     private $adresse;
-
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     * @Assert\NotBlank(
-     *     message = "Ce Champ ne doit pas être vide."
-     * )
-     * @Groups({"user:read", "user":"write"})
-     */
-    private $genre;
-
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"user:read", "user":"write"})
-     */
-    private $statut;
-
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"user:read", "user":"write"})
-     */
-    private $info_complementaire;
-
-    /**
-     * @ORM\Column(type="string", length=255)
-     * @Assert\NotBlank(
-     *     message = "Ce Champ ne doit pas être vide."
-     * )
-     * @Groups({"user:read", "user":"write"})
-     */
-    private $email;
 
     public function getId(): ?int
     {
@@ -216,7 +122,6 @@ class User implements UserInterface
 
     /**
      * A visual identifier that represents this user.
-     *
      * @see UserInterface
      */
     public function getUsername(): string
@@ -282,14 +187,14 @@ class User implements UserInterface
         // $this->plainPassword = null;
     }
 
-    public function getAvatar(): ?string
+    public function getEmail(): ?string
     {
-        return $this->avatar;
+        return $this->email;
     }
 
-    public function setAvatar(string $avatar): self
+    public function setEmail(string $email): self
     {
-        $this->avatar = $avatar;
+        $this->email = $email;
 
         return $this;
     }
@@ -330,18 +235,6 @@ class User implements UserInterface
         return $this;
     }
 
-    public function getTelephone(): ?string
-    {
-        return $this->telephone;
-    }
-
-    public function setTelephone(string $telephone): self
-    {
-        $this->telephone = $telephone;
-
-        return $this;
-    }
-
     public function getAdresse(): ?string
     {
         return $this->adresse;
@@ -350,54 +243,6 @@ class User implements UserInterface
     public function setAdresse(string $adresse): self
     {
         $this->adresse = $adresse;
-
-        return $this;
-    }
-
-    public function getGenre(): ?string
-    {
-        return $this->genre;
-    }
-
-    public function setGenre(?string $genre): self
-    {
-        $this->genre = $genre;
-
-        return $this;
-    }
-
-    public function getStatut(): ?string
-    {
-        return $this->statut;
-    }
-
-    public function setStatut(string $statut): self
-    {
-        $this->statut = $statut;
-
-        return $this;
-    }
-
-    public function getInfoComplementaire(): ?string
-    {
-        return $this->info_complementaire;
-    }
-
-    public function setInfoComplementaire(?string $info_complementaire): self
-    {
-        $this->info_complementaire = $info_complementaire;
-
-        return $this;
-    }
-
-    public function getEmail(): ?string
-    {
-        return $this->email;
-    }
-
-    public function setEmail(string $email): self
-    {
-        $this->email = $email;
 
         return $this;
     }

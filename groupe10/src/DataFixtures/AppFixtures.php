@@ -22,71 +22,67 @@ class AppFixtures extends Fixture
         // $product = new Product();
         // $manager->persist($product);
 
-        $tabRoles = ['ROLE_ADMIN', 'ROLE_FORMATEUR', 'ROLE_APPRENANT'];
-        $tab = ['admin', 'formateur', 'apprenant'];
+        $tabRoles = ['ROLE_ADMIN', 'ROLE_FORMATEUR', 'ROLE_CM', 'ROLE_APPRENANT'];
+        $tab = ['ADMIN', 'FORMATEUR', 'CM', 'APPRENANT'];
 
         $tabUser = [
             [
-                "prenom"=>"admin",
-                "nom"=>"admin",
                 "email"=>"admin@gmail.com",
                 "password"=>"admin",
-                "telephone"=>"+221771231212",
-                "adresse"=>"Grand Dakar",
-                "genre"=>"",
-                "statut"=>"",
-                "info_complementaire"=>""
+                "username"=>"Niass",
+                "prenom"=>"Baye",
+                "nom"=>"Niass",
+                "adresse"=>"Inconnue"
             ],
             [
-                "prenom"=>"formateur",
-                "nom"=>"formateur",
                 "email"=>"formateur@gmail.com",
                 "password"=>"formateur",
-                "telephone"=>"+221773212121",
-                "adresse"=>"Dieuppeul",
-                "genre"=>"",
-                "statut"=>"",
-                "info_complementaire"=>""
+                "username"=>"Wane",
+                "prenom"=>"Birane",
+                "nom"=>"Wane",
+                "adresse"=>"Thies"
             ],
             [
-                "prenom"=>"apprenant",
-                "nom"=>"apprenant",
+                "email"=>"cm@gmail.com",
+                "password"=>"cm",
+                "username"=>"Yankoba",
+                "prenom"=>"Yankoba",
+                "nom"=>"Mane",
+                "adresse"=>"Inconnue"
+            ],
+            [
                 "email"=>"apprenant@gmail.com",
                 "password"=>"apprenant",
-                "telephone"=>"+221771433434",
-                "adresse"=>"Mbao",
-                "genre"=>"Masculin",
-                "statut"=>"Actif",
-                "info_complementaire"=>"Passioné de technologie."
-            ],
+                "username"=>"qwerty",
+                "prenom"=>"Abdel",
+                "nom"=>"Kader",
+                "adresse"=>"Yoff"
+            ]
         ];
 
-        for ($i=0; $i<count($tab); $i++){
-            $profils = new Profil();
-            $profils->setLibelle($tab[$i]);
+            for ($i=0; $i<count($tab); $i++){
+                $profils = new Profil();
+                $profils->setLibelle($tab[$i]);
 
-            $user = new User();
+                $user = new User();
 
-            $user->setUsername($tab[$i]);
-            $role = [$tabRoles[$i]];
-            $user->setRoles($role);
-            $user->setPrenom($tabUser[$i]["prenom"]);
-            $user->setNom($tabUser[$i]["nom"]);
-            $user->setEmail($tabUser[$i]["email"]);
-            $user->setTelephone($tabUser[$i]["telephone"]);
-            $user->setAdresse($tabUser[$i]["adresse"]);
-            $user->setGenre($tabUser[$i]["genre"]);
-            $user->setStatut($tabUser[$i]["statut"]);
-            $user->setInfoComplementaire($tabUser[$i]["info_complementaire"]);
+                $role = [$tabRoles[$i]];
+                $user->setRoles($role);
+                $user->setUsername($tabUser[$i]["username"]);
+                $user->setEmail($tabUser[$i]["email"]);
+                $user->setPrenom($tabUser[$i]["prenom"]);
+                $user->setNom($tabUser[$i]["nom"]);
+                $user->setAdresse($tabUser[$i]["adresse"]);
 
-            $password = $this->encoder->encodePassword($user, $tabUser[$i]["password"]);
-            $user->setPassword($password);
-            $user->setProfil($profils);
 
-            $manager->persist($profils);
-            $manager->persist($user);
+                $password = $this->encoder->encodePassword($user, $tabUser[$i]["password"]);
+                $user->setPassword($password);
+                $user->setProfil($profils);
 
-            $manager->flush();
-        }
+                $manager->persist($profils);
+                $manager->persist($user);
+
+                $manager->flush();
+            }
     }
 }

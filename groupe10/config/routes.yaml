@@ -2,6 +2,32 @@
 #    path: /
 #    controller: App\Controller\DefaultController::index
 
+showApprenant:
+    path: /api/apprenants
+    controller: App\Controller\UserController::showApprenant
+    methods: ['GET']
+
+showApprenantById:
+    path: /api/apprenants/{id}
+    controller: App\Controller\UserController::showApprenantById
+    methods: ['GET','PUT']
+
+showFormateur:
+    path: /api/formateurs
+    controller: App\Controller\UserController::showFormateur
+    methods: ['GET']
+
+showFormateurById:
+    path: /api/formateurs/{id}
+    controller: App\Controller\UserController::showFormateurById
+    methods: ['GET','PUT']
+
+showApprenantByHisId:
+    path: /api/apprenants/{id}
+    controller: App\Controller\UserController::showApprenantByHisId
+    methods: ['GET']
+
+
 #config/routes.yaml
 authentication_token:
     path: /api/login_check

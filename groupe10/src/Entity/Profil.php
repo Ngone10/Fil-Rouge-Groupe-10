@@ -9,26 +9,42 @@ use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Core\Annotation\ApiSubresource;
 use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
  * @ORM\Entity(repositoryClass=ProfilRepository::class)
- * @UniqueEntity("libelle",message="Ce libellé existe déja.")
  * @ApiResource(
- *     collectionOperations={
- *         "get"={"path"="/admin/profils"},
- *         "post"={"path"="/admin/profils"},
+ *       attributes={
+ *                  "normalization_context"={"groups"={"read"}},
+ *                  "denormalization_context"={"groups"={"write"}}
+ *       },
+ *      collectionOperations={
+ *         "get"={"path"="/admin/profils",
+ *                  "access_control"="(is_granted('ROLE_ADMIN'))",
+ *                  "access_control_message"="Vous n'avez pas access à cette Ressource"},
+ *                  "post"={"path"="/admin/profils"},
+ *         "get_profils_users"={
+ *                  "method"="GET",
+ *                  "path"="/admin/profils/{id}/users",
+ *                  "requirements"={"id"="\d+"},
+ *                  "access_control"="(is_granted('ROLE_ADMIN'))",
+ *                  "access_control_message"="Vous n'avez pas access à cette Ressource"
+ *          }
  *     },
- *     itemOperations={
+ *       itemOperations={
  *         "get"={"path"="/admin/profils/{id}",
- *          "requirements"={"id"="\d+"}
+ *                  "requirements"={"id"="\d+"},
+ *                  "access_control"="(is_granted('ROLE_ADMIN'))",
+ *                  "access_control_message"="Vous n'avez pas access à cette Ressource"
  *          },
  *         "put"={"path"="/admin/profils/{id}",
- *          "requirements"={"id"="\d+"}
+ *                  "requirements"={"id"="\d+"},
+ *                  "access_control"="(is_granted('ROLE_ADMIN'))",
+ *                  "access_control_message"="Vous n'avez pas access à cette Ressource"
  *          },
  *          "delete"={"path"="/admin/profils/{id}",
- *          "requirements"={"id"="\d+"}
+ *                  "requirements"={"id"="\d+"},
+ *                  "access_control"="(is_granted('ROLE_ADMIN'))",
+ *                  "access_control_message"="Vous n'avez pas access à cette Ressource"
  *          },
  *     }
  * )
@@ -45,17 +61,14 @@ class Profil
 
     /**
      * @ORM\Column(type="string", length=255)
-     * @Assert\NotBlank(
-     *     message = "Ce Champ ne doit pas être vide."
-     * )
-     * @Groups({"user:read"})
+     * @Groups({"profil:read", "user:write"})
      */
     private $libelle;
 
     /**
      * @ORM\OneToMany(targetEntity=User::class, mappedBy="profil")
      * @ApiSubresource
-     * @Groups({"user:read"})
+     * @Groups({"profil:read", "user:write"})
      */
     private $users;
 
